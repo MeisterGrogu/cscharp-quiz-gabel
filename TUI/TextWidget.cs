@@ -10,12 +10,12 @@ namespace cscharp_quiz_gabel.TUI
             dirty = true;
         }
 
-        protected override bool Draw(char[,] screenBuffer)
+        protected override bool Draw(char[,] screenBuffer, int ruledX, int ruledY)
         {
             for (int i = 0; i < Content.Length && i < Width * Height; i++)
             {
-                int screenX = X + (i % Width);
-                int screenY = Y + (i / Width);
+                int screenX = ruledX + (i % Width);
+                int screenY = ruledY + (i / Width);
                 if (screenX >= 0 && screenX < screenBuffer.GetLength(0) && screenY >= 0 && screenY < screenBuffer.GetLength(1))
                 {
                     screenBuffer[screenX, screenY] = Content[i];
