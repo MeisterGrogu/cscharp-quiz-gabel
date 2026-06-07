@@ -2,10 +2,15 @@ namespace cscharp_quiz_gabel.TUI
 {
     class TUIApp
     {
-        private int width;
-        private int heigth;
+        // Fixed dimensions for the TUI
+        private const int FIXED_WIDTH = 120;
+        private const int FIXED_HEIGHT = 40;
+
+        private int terminalWidth;
+        private int terminalHeight;
 
         private bool dirty;
+        private bool terminalTooSmall = false;
 
         internal char[,] screenBuffer;
 
@@ -13,23 +18,33 @@ namespace cscharp_quiz_gabel.TUI
 
         public TUIApp(int initialWidth, int initialHeight)
         {
-            width = initialWidth;
-            heigth = initialHeight;
-            screenBuffer = new char[width, heigth];
+            terminalWidth = initialWidth;
+            terminalHeight = initialHeight;
+            screenBuffer = new char[FIXED_WIDTH, FIXED_HEIGHT];
             dirty = true;
         }
 
-        private void resize(int newWidth, int newHeight)
+        private void updateTerminalSize(int newWidth, int newHeight)
         {
-            width = newWidth;
-            heigth = newHeight;
+            terminalWidth = newWidth;
+            terminalHeight = newHeight;
             dirty = true;
-            clearScreen();
+
+            // Check if terminal is now too small
+            if (newWidth < FIXED_WIDTH || newHeight < FIXED_HEIGHT)
+            {
+                terminalTooSmall = true;
+            }
+            else
+            {
+                terminalTooSmall = false;
+            }
         }
 
         public bool detectResize()
         {
-            return Terminal.GetTerminalSize() != (width, heigth);
+            var currentSize = Terminal.GetTerminalSize();
+            return currentSize.width != terminalWidth || currentSize.height != terminalHeight;
         }
 
         private static void clearScreen()
@@ -39,10 +54,33 @@ namespace cscharp_quiz_gabel.TUI
 
         private void drawBuffer()
         {
-            string output = "";
-            for (int y = 0; y < heigth; y++)
+            if (terminalTooSmall)
             {
-                for (int x = 0; x < width; x++)
+                clearScreen();
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("ERROR: Terminal is too small!\n");
+                Console.Write($"Required: {FIXED_WIDTH}x{FIXED_HEIGHT}\n");
+                Console.Write($"Current:  {terminalWidth}x{terminalHeight}\n");
+                Console.ResetColor();
+                dirty = false;
+                return;
+            }
+
+            int offsetX = Math.Max(0, (terminalWidth - FIXED_WIDTH) / 2);
+            int offsetY = Math.Max(0, (terminalHeight - FIXED_HEIGHT) / 2);
+
+            string output = "";
+
+            for (int y = 0; y < offsetY; y++)
+            {
+                output += "\n";
+            }
+
+            for (int y = 0; y < FIXED_HEIGHT; y++)
+            {
+                output += new string(' ', offsetX);
+
+                for (int x = 0; x < FIXED_WIDTH; x++)
                 {
                     if (screenBuffer[x, y] == '\0')
                     {
@@ -53,6 +91,7 @@ namespace cscharp_quiz_gabel.TUI
                 }
                 output += "\n";
             }
+
             Console.SetCursorPosition(0, 0);
             Console.Write(output);
             dirty = false;
@@ -70,33 +109,37 @@ namespace cscharp_quiz_gabel.TUI
 
         public int getWidth()
         {
-            return width;
+            return FIXED_WIDTH;
         }
 
         public int getHeight()
         {
-            return heigth;
+            return FIXED_HEIGHT;
         }
 
         public void Update()
         {
-
             if (detectResize())
             {
-                resize(Terminal.GetTerminalSize().width, Terminal.GetTerminalSize().height);
+                var newSize = Terminal.GetTerminalSize();
+                updateTerminalSize(newSize.width, newSize.height);
             }
 
-            char[,] newScreenBuffer = new char[width, heigth];
+            // Always create a fresh screen buffer with fixed dimensions
+            char[,] newScreenBuffer = new char[FIXED_WIDTH, FIXED_HEIGHT];
 
-            foreach (var widget in widgets)
+            if (!terminalTooSmall)
             {
-                if (widget.dirty || dirty)
+                foreach (var widget in widgets)
                 {
-                    dirty = true;
-                    if (!widget.Update(newScreenBuffer))
+                    if (widget.dirty || dirty)
                     {
-                        clearScreen();
-                        Console.WriteLine("Widget " + widget.GetType().Name + " is out of bounds and cannot be drawn, please increase the window size");
+                        dirty = true;
+                        if (!widget.Update(newScreenBuffer))
+                        {
+                            clearScreen();
+                            Console.WriteLine("Widget " + widget.GetType().Name + " is out of bounds and cannot be drawn, please increase the window size");
+                        }
                     }
                 }
             }
