@@ -1,10 +1,12 @@
+using System.Runtime.InteropServices;
+
 namespace cscharp_quiz_gabel.TUI
 {
     class TUIApp
     {
         // Fixed dimensions for the TUI
         private const int FIXED_WIDTH = 120;
-        private const int FIXED_HEIGHT = 40;
+        private const int FIXED_HEIGHT = 10;
 
         private int terminalWidth;
         private int terminalHeight;
@@ -12,16 +14,22 @@ namespace cscharp_quiz_gabel.TUI
         private bool dirty;
         private bool terminalTooSmall = false;
 
-        internal char[,] screenBuffer;
+        internal CharInfo[,] screenBuffer;
 
         private List<Widget> widgets = new List<Widget>();
 
-        public TUIApp(int initialWidth, int initialHeight)
+        private const bool debugShowMouse = false;
+        private int lastMouseX = -1;
+        private int lastMouseY = -1;
+
+        public TUIApp(int initialWidth, int initialHeight, string title = "TUI App")
         {
             terminalWidth = initialWidth;
             terminalHeight = initialHeight;
-            screenBuffer = new char[FIXED_WIDTH, FIXED_HEIGHT];
+            screenBuffer = new CharInfo[FIXED_WIDTH, FIXED_HEIGHT];
             dirty = true;
+            Mouse.EnableMouseInput();
+            Console.Title = title;
         }
 
         private void updateTerminalSize(int newWidth, int newHeight)
@@ -30,7 +38,6 @@ namespace cscharp_quiz_gabel.TUI
             terminalHeight = newHeight;
             dirty = true;
 
-            // Check if terminal is now too small
             if (newWidth < FIXED_WIDTH || newHeight < FIXED_HEIGHT)
             {
                 terminalTooSmall = true;
@@ -39,6 +46,10 @@ namespace cscharp_quiz_gabel.TUI
             {
                 terminalTooSmall = false;
             }
+
+            int offsetX = Math.Max(0, (terminalWidth - FIXED_WIDTH) / 2);
+            int offsetY = Math.Max(0, (terminalHeight - FIXED_HEIGHT) / 2);
+            Mouse.SetMouseOffset(offsetX, offsetY);
         }
 
         public bool detectResize()
@@ -69,31 +80,37 @@ namespace cscharp_quiz_gabel.TUI
             int offsetX = Math.Max(0, (terminalWidth - FIXED_WIDTH) / 2);
             int offsetY = Math.Max(0, (terminalHeight - FIXED_HEIGHT) / 2);
 
-            string output = "";
+            Console.SetCursorPosition(0, 0);
 
             for (int y = 0; y < offsetY; y++)
             {
-                output += "\n";
+                Console.WriteLine();
             }
 
             for (int y = 0; y < FIXED_HEIGHT; y++)
             {
-                output += new string(' ', offsetX);
+                // Print left offset
+                Console.Write(new string(' ', offsetX));
 
                 for (int x = 0; x < FIXED_WIDTH; x++)
                 {
-                    if (screenBuffer[x, y] == '\0')
+                    CharInfo charInfo = screenBuffer[x, y];
+                    Console.ForegroundColor = charInfo.ForegroundColor;
+                    Console.BackgroundColor = charInfo.BackgroundColor;
+
+                    if (charInfo.Content == '\0')
                     {
-                        output += " ";
+                        Console.Write(' ');
                     }
                     else
-                        output += screenBuffer[x, y];
+                    {
+                        Console.Write(charInfo.Content);
+                    }
                 }
-                output += "\n";
+                Console.ResetColor();
+                Console.WriteLine();
             }
 
-            Console.SetCursorPosition(0, 0);
-            Console.Write(output);
             dirty = false;
         }
 
@@ -125,8 +142,9 @@ namespace cscharp_quiz_gabel.TUI
                 updateTerminalSize(newSize.width, newSize.height);
             }
 
-            // Always create a fresh screen buffer with fixed dimensions
-            char[,] newScreenBuffer = new char[FIXED_WIDTH, FIXED_HEIGHT];
+            Mouse.ProcessMouseInput();
+
+            CharInfo[,] newScreenBuffer = new CharInfo[FIXED_WIDTH, FIXED_HEIGHT];
 
             if (!terminalTooSmall)
             {
@@ -135,10 +153,34 @@ namespace cscharp_quiz_gabel.TUI
                     if (widget.dirty || dirty)
                     {
                         dirty = true;
+                        widget.processInput();
                         if (!widget.Update(newScreenBuffer))
                         {
-                            clearScreen();
-                            Console.WriteLine("Widget " + widget.GetType().Name + " is out of bounds and cannot be drawn, please increase the window size");
+                            dirty = false;
+                        }
+                    }
+                }
+            }
+
+            if (debugShowMouse)
+            {
+                int mouseX = Mouse.GetMouseX();
+                int mouseY = Mouse.GetMouseY();
+
+                if (mouseX != lastMouseX || mouseY != lastMouseY)
+                {
+                    lastMouseX = mouseX;
+                    lastMouseY = mouseY;
+                    dirty = true;
+                }
+
+                if (mouseX >= 0 && mouseX + 2 < FIXED_WIDTH && mouseY >= 0 && mouseY < FIXED_HEIGHT)
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (mouseX + i < FIXED_WIDTH)
+                        {
+                            newScreenBuffer[mouseX + i, mouseY] = new CharInfo('@');
                         }
                     }
                 }

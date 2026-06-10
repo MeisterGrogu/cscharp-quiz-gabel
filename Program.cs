@@ -6,7 +6,7 @@ class Program
     {
         string widthString;
         string heightString;
-        TUIApp app = new TUIApp(80, 24);
+        TUIApp app = new TUIApp(80, 24, "Quiz Game");
 
         widthString = app.getWidth().ToString();
         heightString = app.getHeight().ToString();
@@ -14,10 +14,16 @@ class Program
         TextWidget textWidget = new TextWidget(20, 10, 25, 1, "WELCOME TO THE QUIZ GAME!");
         textWidget.AddPositionRule(textWidget.CenterX);
         textWidget.AddPositionRule((terminalWidth, terminalHeight) => (-1, terminalHeight / 2 - 2));
-        TextWidget textWidget2 = new TextWidget(20, 12, 22, 1, "PRESS ANY KEY TO START");
-        textWidget2.AddPositionRule(textWidget2.Center);
         app.AddWidget(textWidget);
-        app.AddWidget(textWidget2);
+
+        Button startButton = new Button(0, 0, 5, 1, "START", () =>
+        {
+            textWidget.SetContent("The quiz has started!");
+
+        });
+        startButton.AddPositionRule(startButton.Center);
+        app.AddWidget(startButton);
+
         while (true)
         {
             app.Update();

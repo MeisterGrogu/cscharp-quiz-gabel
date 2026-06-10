@@ -2,6 +2,7 @@ using System.Data;
 
 namespace cscharp_quiz_gabel.TUI
 {
+
     class Widget(int x, int y, int width, int height)
     {
         // origin is top left corner of the terminal and goes down and right
@@ -43,25 +44,29 @@ namespace cscharp_quiz_gabel.TUI
             dirty = true;
         }
 
-        public bool Update(char[,] screenBuffer)
+        private void ApplyPositionRules(int terminalWidth, int terminalHeight)
         {
-            int ruledX = X;
-            int ruledY = Y;
-            for (int i = 0; i < positionRules.Count; i++)
+            foreach (var rule in positionRules.ToList())
             {
-                int tempX, tempY;
-                (tempX, tempY) = positionRules[i](screenBuffer.GetLength(0), screenBuffer.GetLength(1));
-                if (tempX != -1) ruledX = tempX;
-                if (tempY != -1) ruledY = tempY;
+                var (newX, newY) = rule(terminalWidth, terminalHeight);
+                if (newX != -1) X = newX;
+                if (newY != -1) Y = newY;
+                positionRules.Remove(rule);
             }
-
-            if (ruledX < 0) ruledX = X;
-            if (ruledY < 0) ruledY = Y;
-
-            return Draw(screenBuffer, ruledX, ruledY);
         }
 
-        protected virtual bool Draw(char[,] screenBuffer, int ruledX, int ruledY)
+        public virtual void processInput()
+        {
+
+        }
+
+        public bool Update(CharInfo[,] screenBuffer)
+        {
+            ApplyPositionRules(screenBuffer.GetLength(0), screenBuffer.GetLength(1));
+            return Draw(screenBuffer);
+        }
+
+        protected virtual bool Draw(CharInfo[,] screenBuffer)
         {
             dirty = false;
             return true;
