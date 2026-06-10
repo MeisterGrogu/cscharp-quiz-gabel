@@ -18,6 +18,9 @@ namespace cscharp_quiz_gabel.TUI
 
         private List<Widget> widgets = new List<Widget>();
 
+        // Track dirty regions for efficient rendering
+        private List<(int x, int y, int width, int height)> dirtyRegions = new List<(int, int, int, int)>();
+
         private const bool debugShowMouse = false;
         private int lastMouseX = -1;
         private int lastMouseY = -1;
@@ -27,6 +30,15 @@ namespace cscharp_quiz_gabel.TUI
             terminalWidth = initialWidth;
             terminalHeight = initialHeight;
             screenBuffer = new CharInfo[FIXED_WIDTH, FIXED_HEIGHT];
+
+            for (int y = 0; y < FIXED_HEIGHT; y++)
+            {
+                for (int x = 0; x < FIXED_WIDTH; x++)
+                {
+                    screenBuffer[x, y] = new CharInfo();
+                }
+            }
+
             dirty = true;
             Mouse.EnableMouseInput();
             Console.Title = title;
@@ -89,7 +101,6 @@ namespace cscharp_quiz_gabel.TUI
 
             for (int y = 0; y < FIXED_HEIGHT; y++)
             {
-                // Print left offset
                 Console.Write(new string(' ', offsetX));
 
                 for (int x = 0; x < FIXED_WIDTH; x++)
@@ -114,6 +125,54 @@ namespace cscharp_quiz_gabel.TUI
             dirty = false;
         }
 
+        private void drawRegions()
+        {
+            if (dirtyRegions.Count == 0) return;
+
+            if (terminalTooSmall)
+            {
+                clearScreen();
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Write("ERROR: Terminal is too small!\n");
+                Console.Write($"Required: {FIXED_WIDTH}x{FIXED_HEIGHT}\n");
+                Console.Write($"Current:  {terminalWidth}x{terminalHeight}\n");
+                Console.ResetColor();
+                dirty = false;
+                return;
+            }
+
+            int offsetX = Math.Max(0, (terminalWidth - FIXED_WIDTH) / 2);
+            int offsetY = Math.Max(0, (terminalHeight - FIXED_HEIGHT) / 2);
+
+            foreach (var region in dirtyRegions)
+            {
+                for (int y = region.y; y < region.y + region.height && y < FIXED_HEIGHT; y++)
+                {
+                    Console.SetCursorPosition(offsetX + region.x, offsetY + y);
+
+                    for (int x = region.x; x < region.x + region.width && x < FIXED_WIDTH; x++)
+                    {
+                        CharInfo charInfo = screenBuffer[x, y];
+                        Console.ForegroundColor = charInfo.ForegroundColor;
+                        Console.BackgroundColor = charInfo.BackgroundColor;
+
+                        if (charInfo.Content == '\0')
+                        {
+                            Console.Write(' ');
+                        }
+                        else
+                        {
+                            Console.Write(charInfo.Content);
+                        }
+                    }
+                    Console.ResetColor();
+                }
+            }
+
+            dirtyRegions.Clear();
+            dirty = false;
+        }
+
         public void AddWidget(Widget widget)
         {
             widgets.Add(widget);
@@ -134,17 +193,27 @@ namespace cscharp_quiz_gabel.TUI
             return FIXED_HEIGHT;
         }
 
+        private void clearRegion(int x, int y, int width, int height)
+        {
+            for (int i = 0; i < width && x + i < FIXED_WIDTH; i++)
+            {
+                for (int j = 0; j < height && y + j < FIXED_HEIGHT; j++)
+                {
+                    screenBuffer[x + i, y + j] = new CharInfo();
+                }
+            }
+        }
+
         public void Update()
         {
             if (detectResize())
             {
                 var newSize = Terminal.GetTerminalSize();
                 updateTerminalSize(newSize.width, newSize.height);
+                dirty = true;
             }
 
             Mouse.ProcessMouseInput();
-
-            CharInfo[,] newScreenBuffer = new CharInfo[FIXED_WIDTH, FIXED_HEIGHT];
 
             if (!terminalTooSmall)
             {
@@ -152,11 +221,15 @@ namespace cscharp_quiz_gabel.TUI
                 {
                     if (widget.dirty || dirty)
                     {
-                        dirty = true;
+                        clearRegion(widget.X, widget.Y, widget.Width, widget.Height);
+
                         widget.processInput();
-                        if (!widget.Update(newScreenBuffer))
+                        if (widget.Update(screenBuffer))
                         {
-                            dirty = false;
+                            if (widget.UpdatedRegion.HasValue)
+                            {
+                                dirtyRegions.Add(widget.UpdatedRegion.Value);
+                            }
                         }
                     }
                 }
@@ -180,17 +253,21 @@ namespace cscharp_quiz_gabel.TUI
                     {
                         if (mouseX + i < FIXED_WIDTH)
                         {
-                            newScreenBuffer[mouseX + i, mouseY] = new CharInfo('@');
+                            screenBuffer[mouseX + i, mouseY] = new CharInfo('@');
                         }
                     }
+                    dirtyRegions.Add((mouseX, mouseY, 3, 1));
                 }
             }
 
             if (dirty)
             {
-                screenBuffer = newScreenBuffer;
                 clearScreen();
                 drawBuffer();
+            }
+            else if (dirtyRegions.Count > 0)
+            {
+                drawRegions();
             }
         }
     }

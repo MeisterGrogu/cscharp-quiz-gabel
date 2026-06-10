@@ -13,6 +13,9 @@ namespace cscharp_quiz_gabel.TUI
 
         public bool dirty = true;
 
+        // Tracks the region that was updated in the last draw
+        public (int x, int y, int width, int height)? UpdatedRegion { get; protected set; } = null;
+
         protected List<Func<int, int, (int, int)>> positionRules = new List<Func<int, int, (int, int)>>();
 
 

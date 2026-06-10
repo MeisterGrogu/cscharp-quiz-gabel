@@ -2,15 +2,29 @@ using System.Runtime.CompilerServices;
 
 namespace cscharp_quiz_gabel.TUI
 {
-    class Button(int x, int y, int width, int height, string text, Action action) : Widget(x, y, width, height)
+    class Button : Widget
     {
-        public string Text { get; set; } = text;
+        public string Text { get; set; }
+
+        public Button(int x, int y, string text, Action action) : this(x, y, 0, 1, text, action) { }
+
+        public Button(int x, int y, int width, int height, string text, Action action) : base(x, y, width, height)
+        {
+            Text = text;
+            this.action = action;
+
+            // Auto-calculate width if not provided (width == 0)
+            if (Width == 0)
+            {
+                Width = Text.Length + 4; // "[ " + text + " ]"
+            }
+        }
         public ConsoleColor ForegroundColor { get; set; } = ConsoleColor.White;
         public ConsoleColor BackgroundColor { get; set; } = ConsoleColor.Black;
         public ConsoleColor HoveredForegroundColor { get; set; } = ConsoleColor.Black;
         public ConsoleColor HoveredBackgroundColor { get; set; } = ConsoleColor.White;
 
-        private Action action = action;
+        private Action action;
         private bool handlerRegistered = false;
 
         private bool hovered = false;
@@ -61,6 +75,8 @@ namespace cscharp_quiz_gabel.TUI
                 buffer[X + i, Y] = new CharInfo(buttonText[i], ConsoleColor.White, ConsoleColor.Black);
             }
 
+            // Track the region that was updated
+            UpdatedRegion = (X, Y, Width, Height);
             dirty = false;
             return true;
         }

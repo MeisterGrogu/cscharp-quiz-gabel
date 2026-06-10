@@ -1,8 +1,21 @@
 namespace cscharp_quiz_gabel.TUI
 {
-    class TextWidget(int x, int y, int width, int height, string content) : Widget(x, y, width, height)
+    class TextWidget : Widget
     {
-        public string Content { get; set; } = content;
+        public string Content { get; set; }
+
+        public TextWidget(int x, int y, string content) : this(x, y, 0, 1, content) { }
+
+        public TextWidget(int x, int y, int width, int height, string content) : base(x, y, width, height)
+        {
+            Content = content;
+
+            // Auto-calculate width if not provided (width == 0)
+            if (Width == 0)
+            {
+                Width = Content.Length;
+            }
+        }
         public ConsoleColor ForegroundColor { get; set; } = ConsoleColor.White;
         public ConsoleColor BackgroundColor { get; set; } = ConsoleColor.Black;
 
@@ -29,6 +42,9 @@ namespace cscharp_quiz_gabel.TUI
                 }
             }
 
+            // Track the region that was updated
+            int updatedHeight = (Content.Length + Width - 1) / Width; // Ceiling division
+            UpdatedRegion = (X, Y, Width, updatedHeight);
             dirty = false;
             return true;
         }
