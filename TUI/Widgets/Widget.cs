@@ -65,7 +65,7 @@ namespace cscharp_quiz_gabel.TUI.Widgets
             }
         }
 
-        public virtual void processInput()
+        public virtual void setupInput()
         {
 
         }

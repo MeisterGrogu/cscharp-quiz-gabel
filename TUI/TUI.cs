@@ -227,7 +227,7 @@ namespace cscharp_quiz_gabel.TUI
                             clearRegion(widget.X, widget.Y, widget.Width, widget.Height);
                         }
 
-                        widget.processInput();
+                        widget.setupInput();
                         if (widget.Update(screenBuffer))
                         {
                             if (widget.UpdatedRegions.Count > 0)

@@ -28,7 +28,7 @@ namespace cscharp_quiz_gabel.TUI.Widgets
 
         private bool hovered = false;
 
-        public override void processInput()
+        public override void setupInput()
         {
             if (!handlerRegistered)
             {
