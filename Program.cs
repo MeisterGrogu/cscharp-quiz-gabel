@@ -1,4 +1,5 @@
 ﻿using cscharp_quiz_gabel.TUI;
+using cscharp_quiz_gabel.TUI.Widgets;
 
 class Program
 {
@@ -16,13 +17,17 @@ class Program
         textWidget.AddPositionRule((terminalWidth, terminalHeight) => (-1, terminalHeight / 2 - 2));
         app.AddWidget(textWidget);
 
-        Button startButton = new Button(0, 0, 5, 1, "START", () =>
+        Button startButton = new Button(0, 0, 9, 1, "START", () =>
         {
             textWidget.SetContent("The quiz has started!");
 
         });
         startButton.AddPositionRule(startButton.Center);
         app.AddWidget(startButton);
+
+        Outlinewidget outlinewidget = new Outlinewidget(-1, -1, 50, 10);
+        outlinewidget.AddPositionRule(outlinewidget.Center);
+        app.AddWidget(outlinewidget);
 
         while (true)
         {

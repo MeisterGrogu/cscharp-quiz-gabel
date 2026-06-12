@@ -1,10 +1,9 @@
-using System.Runtime.InteropServices;
+using cscharp_quiz_gabel.TUI.Widgets;
 
 namespace cscharp_quiz_gabel.TUI
 {
     class TUIApp
     {
-        // Fixed dimensions for the TUI
         private const int FIXED_WIDTH = 120;
         private const int FIXED_HEIGHT = 10;
 
@@ -13,12 +12,12 @@ namespace cscharp_quiz_gabel.TUI
 
         private bool dirty;
         private bool terminalTooSmall = false;
+        private bool terminalWasToSmall = false;
 
         internal CharInfo[,] screenBuffer;
 
         private List<Widget> widgets = new List<Widget>();
 
-        // Track dirty regions for efficient rendering
         private List<(int x, int y, int width, int height)> dirtyRegions = new List<(int, int, int, int)>();
 
         private const bool debugShowMouse = false;
@@ -53,10 +52,12 @@ namespace cscharp_quiz_gabel.TUI
             if (newWidth < FIXED_WIDTH || newHeight < FIXED_HEIGHT)
             {
                 terminalTooSmall = true;
+                terminalWasToSmall = false;
             }
             else
             {
                 terminalTooSmall = false;
+                terminalWasToSmall = true;
             }
 
             int offsetX = Math.Max(0, (terminalWidth - FIXED_WIDTH) / 2);
@@ -219,20 +220,29 @@ namespace cscharp_quiz_gabel.TUI
             {
                 foreach (var widget in widgets)
                 {
-                    if (widget.dirty || dirty)
+                    if (widget.dirty || dirty || terminalWasToSmall)
                     {
-                        clearRegion(widget.X, widget.Y, widget.Width, widget.Height);
+                        if (widget.X >= 0 && widget.Y >= 0)
+                        {
+                            clearRegion(widget.X, widget.Y, widget.Width, widget.Height);
+                        }
 
                         widget.processInput();
                         if (widget.Update(screenBuffer))
                         {
-                            if (widget.UpdatedRegion.HasValue)
+                            if (widget.UpdatedRegions.Count > 0)
                             {
-                                dirtyRegions.Add(widget.UpdatedRegion.Value);
+                                dirtyRegions.AddRange(widget.UpdatedRegions);
+                            }
+                            else
+                            {
+                                dirty = true;
                             }
                         }
                     }
                 }
+
+                terminalWasToSmall = false;
             }
 
             if (debugShowMouse)

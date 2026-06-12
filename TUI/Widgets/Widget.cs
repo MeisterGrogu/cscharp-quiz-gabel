@@ -1,11 +1,10 @@
 using System.Data;
 
-namespace cscharp_quiz_gabel.TUI
+namespace cscharp_quiz_gabel.TUI.Widgets
 {
 
     class Widget(int x, int y, int width, int height)
     {
-        // origin is top left corner of the terminal and goes down and right
         public int X { get; set; } = x;
         public int Y { get; set; } = y;
         public int Width { get; set; } = width;
@@ -13,10 +12,19 @@ namespace cscharp_quiz_gabel.TUI
 
         public bool dirty = true;
 
-        // Tracks the region that was updated in the last draw
-        public (int x, int y, int width, int height)? UpdatedRegion { get; protected set; } = null;
+        public List<(int x, int y, int width, int height)> UpdatedRegions { get; protected set; } = new List<(int, int, int, int)>();
 
         protected List<Func<int, int, (int, int)>> positionRules = new List<Func<int, int, (int, int)>>();
+
+        protected void AddUpdatedRegion(int x, int y, int width, int height)
+        {
+            UpdatedRegions.Add((x, y, width, height));
+        }
+
+        protected void ClearUpdatedRegions()
+        {
+            UpdatedRegions.Clear();
+        }
 
 
         public (int, int) CenterX(int terminalWidth, int terminalHeight)
@@ -47,14 +55,13 @@ namespace cscharp_quiz_gabel.TUI
             dirty = true;
         }
 
-        private void ApplyPositionRules(int terminalWidth, int terminalHeight)
+        protected void ApplyPositionRules(int terminalWidth, int terminalHeight)
         {
-            foreach (var rule in positionRules.ToList())
+            foreach (var rule in positionRules)
             {
                 var (newX, newY) = rule(terminalWidth, terminalHeight);
                 if (newX != -1) X = newX;
                 if (newY != -1) Y = newY;
-                positionRules.Remove(rule);
             }
         }
 

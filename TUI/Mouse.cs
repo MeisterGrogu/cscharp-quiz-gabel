@@ -123,11 +123,9 @@ namespace cscharp_quiz_gabel.TUI
         {
             if (!mouseEnabled) return;
 
-            // Use PeekConsoleInput to non-blockingly check for events
             INPUT_RECORD[] buffer = new INPUT_RECORD[128];
             if (PeekConsoleInput(consoleHandle, buffer, 128, out uint eventsAvailable) && eventsAvailable > 0)
             {
-                // Actually read the events to remove them from the buffer
                 if (ReadConsoleInput(consoleHandle, buffer, Math.Min((uint)128, eventsAvailable), out uint eventsRead))
                 {
                     for (int i = 0; i < eventsRead; i++)
@@ -181,6 +179,7 @@ namespace cscharp_quiz_gabel.TUI
                 consoleMode &= ~ENABLE_QUICK_EDIT_MODE;
                 consoleMode |= ENABLE_EXTENDED_FLAGS;
                 SetConsoleMode(consoleHandle, consoleMode);
+                Console.CursorVisible = false;
             }
             else
             {

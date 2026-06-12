@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace cscharp_quiz_gabel.TUI
+namespace cscharp_quiz_gabel.TUI.Widgets
 {
     class Button : Widget
     {
@@ -13,7 +13,6 @@ namespace cscharp_quiz_gabel.TUI
             Text = text;
             this.action = action;
 
-            // Auto-calculate width if not provided (width == 0)
             if (Width == 0)
             {
                 Width = Text.Length + 4; // "[ " + text + " ]"
@@ -75,8 +74,7 @@ namespace cscharp_quiz_gabel.TUI
                 buffer[X + i, Y] = new CharInfo(buttonText[i], ConsoleColor.White, ConsoleColor.Black);
             }
 
-            // Track the region that was updated
-            UpdatedRegion = (X, Y, Width, Height);
+            AddUpdatedRegion(X, Y, Width, Height);
             dirty = false;
             return true;
         }
