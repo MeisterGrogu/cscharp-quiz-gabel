@@ -2,13 +2,13 @@ using System.Runtime.CompilerServices;
 
 namespace cscharp_quiz_gabel.TUI.Widgets
 {
-    class Button : Widget
+    public class Button : Widget
     {
         public string Text { get; set; }
 
-        public Button(int x, int y, string text, Action action) : this(x, y, 0, 1, text, action) { }
+        public Button(int x, int y, IWidgetManager manager, string text, Action<IWidgetManager, Button> action, string? id = null) : this(x, y, 0, 1, manager, text, action, id) { }
 
-        public Button(int x, int y, int width, int height, string text, Action action) : base(x, y, width, height)
+        public Button(int x, int y, int width, int height, IWidgetManager manager, string text, Action<IWidgetManager, Button> action, string? id = null) : base(x, y, width, height, manager, id)
         {
             Text = text;
             this.action = action;
@@ -18,12 +18,13 @@ namespace cscharp_quiz_gabel.TUI.Widgets
                 Width = Text.Length + 4; // "[ " + text + " ]"
             }
         }
+
         public ConsoleColor ForegroundColor { get; set; } = ConsoleColor.White;
         public ConsoleColor BackgroundColor { get; set; } = ConsoleColor.Black;
         public ConsoleColor HoveredForegroundColor { get; set; } = ConsoleColor.Black;
         public ConsoleColor HoveredBackgroundColor { get; set; } = ConsoleColor.White;
 
-        private Action action;
+        private Action<IWidgetManager, Button> action;
         private bool handlerRegistered = false;
 
         private bool hovered = false;
@@ -32,8 +33,8 @@ namespace cscharp_quiz_gabel.TUI.Widgets
         {
             if (!handlerRegistered)
             {
-                Mouse.AddMouseClickHandler(ButtonMouseClickHandler);
-                Mouse.AddMouseMoveHandler(ButtonMouseMoveHandler);
+                Mouse.AddMouseClickHandler(ID ?? "Button", ButtonMouseClickHandler);
+                Mouse.AddMouseMoveHandler(ID ?? "Button", ButtonMouseMoveHandler);
                 handlerRegistered = true;
             }
         }
@@ -103,8 +104,13 @@ namespace cscharp_quiz_gabel.TUI.Widgets
         {
             if (clickX >= X && clickX < X + Width && clickY >= Y && clickY < Y + Height && button == 1)
             {
-                action();
+                action(Manager, this);
             }
+        }
+
+        public override void destroy()
+        {
+
         }
     }
 }

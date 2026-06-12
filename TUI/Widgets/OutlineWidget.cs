@@ -2,7 +2,7 @@ namespace cscharp_quiz_gabel.TUI.Widgets
 {
     class Outlinewidget : Widget
     {
-        public Outlinewidget(int x, int y, int width, int height) : base(x, y, width, height)
+        public Outlinewidget(int x, int y, int width, int height, IWidgetManager manager, string? id = null) : base(x, y, width, height, manager, id)
         {
 
         }

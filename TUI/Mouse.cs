@@ -60,9 +60,9 @@ namespace cscharp_quiz_gabel.TUI
 
         private static bool mouseEnabled = false;
 
-        private static List<Action<int, int, int>> mouseClickHandlers = new List<Action<int, int, int>>();
+        private static Dictionary<string, Action<int, int, int>> mouseClickHandlers = new Dictionary<string, Action<int, int, int>>();
 
-        private static List<Action<int, int>> mouseMoveHandlers = new List<Action<int, int>>();
+        private static Dictionary<string, Action<int, int>> mouseMoveHandlers = new Dictionary<string, Action<int, int>>();
 
         private static IntPtr consoleHandle;
         private static int offsetX = 0;
@@ -83,9 +83,14 @@ namespace cscharp_quiz_gabel.TUI
         public static int GetMouseX() => mouseX;
         public static int GetMouseY() => mouseY;
 
-        public static void AddMouseClickHandler(Action<int, int, int> handler)
+        public static void AddMouseClickHandler(string id, Action<int, int, int> handler)
         {
-            mouseClickHandlers.Add(handler);
+            mouseClickHandlers.Add(id, handler);
+        }
+
+        public static void RemoveMouseClickHandler(string id)
+        {
+            mouseClickHandlers.Remove(id);
         }
 
         public static void defaultMouseClickHandler(int x, int y, int button)
@@ -95,15 +100,20 @@ namespace cscharp_quiz_gabel.TUI
 
         private static void InvokeAllMouseClickHandlers(int x, int y, int button)
         {
-            foreach (var handler in mouseClickHandlers)
+            foreach (var handler in mouseClickHandlers.Values)
             {
                 handler(x, y, button);
             }
         }
 
-        public static void AddMouseMoveHandler(Action<int, int> handler)
+        public static void AddMouseMoveHandler(string id, Action<int, int> handler)
         {
-            mouseMoveHandlers.Add(handler);
+            mouseMoveHandlers.Add(id, handler);
+        }
+
+        public static void RemoveMouseMoveHandler(string id)
+        {
+            mouseMoveHandlers.Remove(id);
         }
 
         public static void defaultMouseMoveHandler(int x, int y)
@@ -113,7 +123,7 @@ namespace cscharp_quiz_gabel.TUI
 
         private static void InvokeAllMouseMoveHandlers(int x, int y)
         {
-            foreach (var handler in mouseMoveHandlers)
+            foreach (var handler in mouseMoveHandlers.Values)
             {
                 handler(x, y);
             }

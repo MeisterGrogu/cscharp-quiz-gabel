@@ -2,7 +2,7 @@ using cscharp_quiz_gabel.TUI.Widgets;
 
 namespace cscharp_quiz_gabel.TUI
 {
-    class TUIApp
+    public class TUIApp : IWidgetManager
     {
         private const int FIXED_WIDTH = 120;
         private const int FIXED_HEIGHT = 10;
@@ -20,7 +20,6 @@ namespace cscharp_quiz_gabel.TUI
 
         private List<(int x, int y, int width, int height)> dirtyRegions = new List<(int, int, int, int)>();
 
-        private const bool debugShowMouse = false;
         private int lastMouseX = -1;
         private int lastMouseY = -1;
 
@@ -176,12 +175,37 @@ namespace cscharp_quiz_gabel.TUI
 
         public void AddWidget(Widget widget)
         {
+            widget.Manager = this;
             widgets.Add(widget);
+            dirty = true;
         }
 
-        public void RemoveWidget(Widget widget)
+        public void RemoveWidget(Widget? widget)
         {
-            widgets.Remove(widget);
+            if (widget != null)
+            {
+                widget.destroy();
+                widgets.Remove(widget);
+                dirty = true;
+            }
+        }
+
+        public List<Widget> GetAllWidgets()
+        {
+            return widgets.ToList();
+        }
+
+        public Widget? FindWidget(string? id)
+        {
+            return widgets.FirstOrDefault((widget) => widget.IDEquals(id));
+        }
+
+        public void ClearWidgets()
+        {
+            foreach (Widget widget in widgets.ToList())
+            {
+                widgets.Remove(widget);
+            }
         }
 
         public int getWidth()
@@ -218,11 +242,16 @@ namespace cscharp_quiz_gabel.TUI
 
             if (!terminalTooSmall)
             {
+                if (dirty)
+                {
+                    clearRegion(0, 0, FIXED_WIDTH, FIXED_HEIGHT);
+                }
+
                 foreach (var widget in widgets)
                 {
                     if (widget.dirty || dirty || terminalWasToSmall)
                     {
-                        if (widget.X >= 0 && widget.Y >= 0)
+                        if (!dirty && widget.X >= 0 && widget.Y >= 0)
                         {
                             clearRegion(widget.X, widget.Y, widget.Width, widget.Height);
                         }
@@ -233,6 +262,7 @@ namespace cscharp_quiz_gabel.TUI
                             if (widget.UpdatedRegions.Count > 0)
                             {
                                 dirtyRegions.AddRange(widget.UpdatedRegions);
+                                widget.ClearUpdatedRegions();
                             }
                             else
                             {
@@ -245,30 +275,30 @@ namespace cscharp_quiz_gabel.TUI
                 terminalWasToSmall = false;
             }
 
-            if (debugShowMouse)
+#if DEBUG
+#else
+            int mouseX = Mouse.GetMouseX();
+            int mouseY = Mouse.GetMouseY();
+
+            if (mouseX != lastMouseX || mouseY != lastMouseY)
             {
-                int mouseX = Mouse.GetMouseX();
-                int mouseY = Mouse.GetMouseY();
-
-                if (mouseX != lastMouseX || mouseY != lastMouseY)
-                {
-                    lastMouseX = mouseX;
-                    lastMouseY = mouseY;
-                    dirty = true;
-                }
-
-                if (mouseX >= 0 && mouseX + 2 < FIXED_WIDTH && mouseY >= 0 && mouseY < FIXED_HEIGHT)
-                {
-                    for (int i = 0; i < 3; i++)
-                    {
-                        if (mouseX + i < FIXED_WIDTH)
-                        {
-                            screenBuffer[mouseX + i, mouseY] = new CharInfo('@');
-                        }
-                    }
-                    dirtyRegions.Add((mouseX, mouseY, 3, 1));
-                }
+                lastMouseX = mouseX;
+                lastMouseY = mouseY;
+                dirty = true;
             }
+
+            if (mouseX >= 0 && mouseX + 2 < FIXED_WIDTH && mouseY >= 0 && mouseY < FIXED_HEIGHT)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    if (mouseX + i < FIXED_WIDTH)
+                    {
+                        screenBuffer[mouseX + i, mouseY] = new CharInfo('@');
+                    }
+                }
+                dirtyRegions.Add((mouseX, mouseY, 3, 1));
+            }
+#endif
 
             if (dirty)
             {

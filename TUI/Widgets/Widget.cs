@@ -2,13 +2,24 @@ using System.Data;
 
 namespace cscharp_quiz_gabel.TUI.Widgets
 {
+    public interface IWidgetManager
+    {
+        void AddWidget(Widget widget);
+        void RemoveWidget(Widget? widget);
+        List<Widget> GetAllWidgets();
+        Widget? FindWidget(string? id);
 
-    class Widget(int x, int y, int width, int height)
+    }
+
+    public class Widget(int x, int y, int width, int height, IWidgetManager manager, string? id = null)
     {
         public int X { get; set; } = x;
         public int Y { get; set; } = y;
         public int Width { get; set; } = width;
         public int Height { get; set; } = height;
+
+
+        public string? ID = id;
 
         public bool dirty = true;
 
@@ -16,12 +27,14 @@ namespace cscharp_quiz_gabel.TUI.Widgets
 
         protected List<Func<int, int, (int, int)>> positionRules = new List<Func<int, int, (int, int)>>();
 
+        public IWidgetManager Manager { get; set; } = manager;
+
         protected void AddUpdatedRegion(int x, int y, int width, int height)
         {
             UpdatedRegions.Add((x, y, width, height));
         }
 
-        protected void ClearUpdatedRegions()
+        public void ClearUpdatedRegions()
         {
             UpdatedRegions.Clear();
         }
@@ -80,6 +93,16 @@ namespace cscharp_quiz_gabel.TUI.Widgets
         {
             dirty = false;
             return true;
+        }
+
+        public bool IDEquals(string? id)
+        {
+            return id == ID;
+        }
+
+        public virtual void destroy()
+        {
+
         }
     }
 }

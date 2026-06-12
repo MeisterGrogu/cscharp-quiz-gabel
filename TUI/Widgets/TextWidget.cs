@@ -12,9 +12,9 @@ namespace cscharp_quiz_gabel.TUI.Widgets
         private int oldWidth;
         private int oldHeight;
 
-        public TextWidget(int x, int y, string content) : this(x, y, 0, 1, content) { }
+        public TextWidget(int x, int y, IWidgetManager manager, string content) : this(x, y, 0, 1, manager, content) { }
 
-        public TextWidget(int x, int y, int width, int height, string content) : base(x, y, width, height)
+        public TextWidget(int x, int y, int width, int height, IWidgetManager manager, string content, string? id = null) : base(x, y, width, height, manager, id)
         {
             Content = content;
 
@@ -56,6 +56,7 @@ namespace cscharp_quiz_gabel.TUI.Widgets
 
         protected override bool Draw(CharInfo[,] screenBuffer)
         {
+            ApplyPositionRules(screenBuffer.GetLength(0), screenBuffer.GetLength(1));
             if (needsCleanup)
             {
                 for (int dx = 0; dx < oldWidth; dx++)
@@ -70,8 +71,6 @@ namespace cscharp_quiz_gabel.TUI.Widgets
                         }
                     }
                 }
-
-                ApplyPositionRules(screenBuffer.GetLength(0), screenBuffer.GetLength(1));
 
                 AddUpdatedRegion(oldX, oldY, oldWidth, oldHeight);
                 needsCleanup = false;
