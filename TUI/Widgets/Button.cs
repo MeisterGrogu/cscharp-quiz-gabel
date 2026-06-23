@@ -110,7 +110,8 @@ namespace cscharp_quiz_gabel.TUI.Widgets
 
         public override void destroy()
         {
-
+            Mouse.RemoveMouseClickHandler(ID ?? "Button");
+            Mouse.RemoveMouseMoveHandler(ID ?? "Button");
         }
     }
 }
